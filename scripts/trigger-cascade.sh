@@ -9,11 +9,16 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
-REPOS=(
-  "lcod-dev/lcod-kernel-js"
-  "lcod-dev/lcod-kernel-rs"
-  "lcod-dev/lcod-kernel-java"
-)
+REPO_LIST="${REPO_LIST:-}"
+if [[ -n "${REPO_LIST}" ]]; then
+  IFS=',' read -r -a REPOS <<< "${REPO_LIST}"
+else
+  REPOS=(
+    "lcod-team/lcod-kernel-js"
+    "lcod-team/lcod-kernel-rs"
+    "lcod-team/lcod-kernel-java"
+  )
+fi
 
 WORKFLOW="${WORKFLOW:-ci.yml}"
 REF="${REF:-main}"
