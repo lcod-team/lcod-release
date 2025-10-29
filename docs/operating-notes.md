@@ -30,6 +30,7 @@ This document captures the initial ideas for the LCOD release orchestrator. It w
 
 - Spec and resolver changes should trigger kernels to run their full test suites before merging.
 - `scripts/trigger-cascade.sh` calls the GitHub API (via `gh workflow run`) to start the appropriate workflows. Override `REPO_LIST` (comma separated) or `WORKFLOW` / `REF` if you need a custom trigger.
+- Core test pipelines (`lcod-kernel-rs` rust tests, `lcod-kernel-js` node tests, `lcod-kernel-java` gradle build) now expose a `workflow_dispatch` trigger so the orchestrator (or developers) can re-run them on demand.
 - Once stabilised, move the orchestration into a scheduled GitHub Action within this repository.
 
 ## Release day checklist (draft)
