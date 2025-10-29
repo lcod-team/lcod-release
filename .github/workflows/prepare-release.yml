@@ -24,6 +24,9 @@ jobs:
       - name: Setup git credentials
         run: gh auth setup-git
 
+      - name: Configure authenticated remote
+        run: git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+
       - name: Configure git author
         run: |
           git config user.name "lcod-release-bot"
@@ -93,6 +96,9 @@ jobs:
       - name: Setup git credentials
         run: gh auth setup-git
 
+      - name: Configure authenticated remote
+        run: git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+
       - name: Checkout ${{ matrix.repo }}
         uses: actions/checkout@v4
         with:
@@ -104,8 +110,10 @@ jobs:
       - name: Setup git credentials (target repo)
         working-directory: target
         run: gh auth setup-git
-        env:
-          GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
+
+      - name: Configure authenticated remote (target repo)
+        working-directory: target
+        run: git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ matrix.repo }}.git
 
       - name: Configure git author
         working-directory: target
