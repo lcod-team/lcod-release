@@ -13,7 +13,11 @@ if [[ ! -f "${VERSION_FILE}" ]]; then
   exit 1
 fi
 
-VERSION="$(<"${VERSION_FILE}")"
+if [[ -n "${LCOD_VERSION:-}" ]]; then
+  VERSION="${LCOD_VERSION}"
+else
+  VERSION="$(<"${VERSION_FILE}")"
+fi
 
 if [[ $# -lt 1 ]]; then
   echo "Usage: $0 <repo-path> [<repo-path> ...]" >&2

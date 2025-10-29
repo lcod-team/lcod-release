@@ -17,6 +17,15 @@ This document captures the initial ideas for the LCOD release orchestrator. It w
   ```
 - Always run the relevant test suites in each repository after the bump (`cargo test`, `npm test`, `./gradlew test`).
 
+### GitHub workflow `Prepare Release Cascade`
+
+- Manual trigger (`workflow_dispatch`) with an input `version` creates branches `release/v<version>` in `lcod-release` and each downstream repository.
+- Requirements:
+  - Secret `LCOD_RELEASE_TOKEN` (classic PAT with `repo` scope) to allow pushing branches and opening PRs across organisations.
+  - Optional label `release` should exist on target repositories (otherwise GitHub silently ignores the parameter).
+- The job publishes a summary with either the PR URL or a note that no changes were needed.
+- After the workflow finishes, review/merge the PRs, then proceed with tagging and asset publication.
+
 ## Cascade CI
 
 - Spec and resolver changes should trigger kernels to run their full test suites before merging.
