@@ -169,7 +169,7 @@ jobs:
           GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
         run: |
           mkdir -p dist
-          python - <<'PY'
+          cat <<'PY' | python -
 import json
 import os
 import subprocess
