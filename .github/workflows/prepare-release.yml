@@ -26,7 +26,7 @@ jobs:
 
       - name: Configure authenticated remote
         run: |
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          git remote set-url origin https://nicolas-albert:${GH_TOKEN}@github.com/${{ github.repository }}.git
           git config --unset-all http.https://github.com/.extraheader || true
 
       - name: Configure git author
@@ -100,7 +100,7 @@ jobs:
 
       - name: Configure authenticated remote
         run: |
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          git remote set-url origin https://nicolas-albert:${GH_TOKEN}@github.com/${{ github.repository }}.git
           git config --unset-all http.https://github.com/.extraheader || true
 
       - name: Checkout ${{ matrix.repo }}
@@ -118,7 +118,7 @@ jobs:
       - name: Configure authenticated remote (target repo)
         working-directory: target
         run: |
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ matrix.repo }}.git
+          git remote set-url origin https://nicolas-albert:${GH_TOKEN}@github.com/${{ matrix.repo }}.git
           git config --unset-all http.https://github.com/.extraheader || true
 
       - name: Configure git author
