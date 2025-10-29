@@ -29,7 +29,8 @@ This document captures the initial ideas for the LCOD release orchestrator. It w
 ### GitHub workflow `Finalize Release Cascade`
 
 - Manual trigger with the same `version` input tags every downstream repository (`lcod-run-v<version>` for the Rust kernel, `v<version>` elsewhere) using the release PAT.
-- The job waits for the Rust/Node/Java/CLI release workflows to finish, downloads their artefacts, and republishes them under a unified `v<version>` release in `lcod-release`.
+- The job first checks that each repository has merged its `release/v<version>` PR, then tags the repositories.
+- It waits for the Rust/Node/Java/CLI release workflows to finish, downloads their artefacts, and republishes them inside the aggregated `v<version>` release in `lcod-release`.
 - A JSON manifest (`release-manifest.json`) is generated and uploaded alongside the aggregated release; it lists every runtime/CLI asset with size/content-type metadata for consumers.
 - Individual repositories publish their own releases on tag push:
   - `lcod-kernel-rs`: `lcod-run-v<version>` (existing pipeline).

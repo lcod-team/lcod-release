@@ -8,9 +8,47 @@ on:
         required: true
 
 jobs:
+  verify-prs:
+    name: Verify release PRs merged
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - repo: lcod-team/lcod-kernel-rs
+            name: lcod-kernel-rs
+          - repo: lcod-team/lcod-kernel-js
+            name: lcod-kernel-js
+          - repo: lcod-team/lcod-kernel-java
+            name: lcod-kernel-java
+          - repo: lcod-team/lcod-cli
+            name: lcod-cli
+    steps:
+      - name: Check PR state
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
+          REPO: ${{ matrix.repo }}
+          NAME: ${{ matrix.name }}
+        run: |
+          branch="release/v${VERSION}"
+          data="$(gh pr list --repo "${REPO}" --head "${branch}" --state all --json number,state,url --limit 1)"
+          if [[ -z "${data}" || "${data}" == "[]" ]]; then
+            echo "::error::No PR found on ${REPO} with head ${branch}" >&2
+            exit 1
+          fi
+          state="$(echo "${data}" | jq -r '.[0].state')"
+          url="$(echo "${data}" | jq -r '.[0].url')"
+          if [[ "${state}" != "MERGED" ]]; then
+            echo "::error::PR ${url} is not merged (state=${state})" >&2
+            exit 1
+          fi
+          echo "- ${NAME}: ${url} merged" >> "$GITHUB_STEP_SUMMARY"
+
   tag-repositories:
     name: Tag repositories
     runs-on: ubuntu-latest
+    needs: verify-prs
     strategy:
       fail-fast: false
       matrix:
@@ -185,6 +223,9 @@ PY
 
 Included artefacts:
 - lcod-kernel-rs (lcod-run-v${VERSION})
+- lcod-kernel-js (v${VERSION})
+- lcod-kernel-java (v${VERSION})
+- lcod-cli (v${VERSION})
 "
 
           if gh release view "v${VERSION}" >/dev/null 2>&1; then
