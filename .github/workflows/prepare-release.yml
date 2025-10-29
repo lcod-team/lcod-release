@@ -70,12 +70,17 @@ jobs:
             exit 0
           fi
 
+          label_args=()
+          if gh label view release >/dev/null 2>&1; then
+            label_args+=(--label release)
+          fi
+
           pr_url="$(gh pr create \
             --base main \
             --head "${BRANCH}" \
             --title "chore(release): set version to ${VERSION}" \
             --body "Automated version bump to ${VERSION} triggered from ${RUN_URL}." \
-            --label release)"
+            "${label_args[@]}")"
 
           echo "- lcod-release: ${pr_url}" >> "$GITHUB_STEP_SUMMARY"
 
@@ -149,12 +154,17 @@ jobs:
 
             existing="$(gh pr list --head "${branch}" --json number --jq '.[0].htmlUrl' || true)"
             if [[ -z "${existing}" ]]; then
+              label_args=()
+              if gh label view release >/dev/null 2>&1; then
+                label_args+=(--label release)
+              fi
+
               pr_url="$(gh pr create \
                 --base main \
                 --head "${branch}" \
                 --title "chore(release): bump version to ${VERSION}" \
                 --body "Automated bump to ${VERSION} triggered from ${RUN_URL} via lcod-release." \
-                --label release)"
+                "${label_args[@]}")"
             else
               pr_url="${existing}"
             fi
