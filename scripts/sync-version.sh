@@ -183,6 +183,16 @@ PY
     ' "${repo}/build.gradle.kts" > "${tmp_file}"
     mv "${tmp_file}" "${repo}/build.gradle.kts"
   fi
+
+  if [[ -f "${repo}/VERSION" ]]; then
+    echo " - Updating VERSION file in ${repo}"
+    printf '%s\n' "${VERSION}" > "${repo}/VERSION"
+  fi
+
+  if [[ -x "${repo}/scripts/build-bundle.sh" ]]; then
+    echo " - Regenerating CLI bundle via scripts/build-bundle.sh"
+    (cd "${repo}" && ./scripts/build-bundle.sh >/dev/null)
+  fi
 done
 
 echo "Done."
