@@ -98,6 +98,35 @@ jobs:
             --dir dist/rs \
             --clobber
 
+      - name: Generate manifest
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
+        run: |
+          mkdir -p dist
+          tag="lcod-run-v${VERSION}"
+          release_json="$(gh api repos/lcod-team/lcod-kernel-rs/releases/tags/${tag})"
+          manifest="$(jq --arg version "${VERSION}" '
+            {
+              version: $version,
+              kernels: {
+                rs: {
+                  repo: "lcod-team/lcod-kernel-rs",
+                  tag: ("lcod-run-v" + $version),
+                  assets: [
+                    .assets[]
+                    | {
+                        name,
+                        size,
+                        download_url: .browser_download_url,
+                        content_type
+                      }
+                  ]
+                }
+              }
+            }' <<<"${release_json}")"
+          printf '%s\n' "${manifest}" > dist/release-manifest.json
+
       - name: Create aggregated release
         env:
           VERSION: ${{ inputs.version }}

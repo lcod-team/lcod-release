@@ -30,6 +30,7 @@ This document captures the initial ideas for the LCOD release orchestrator. It w
 
 - Manual trigger with the same `version` input tags every downstream repository (`lcod-run-v<version>` for the Rust kernel, `v<version>` elsewhere) using the release PAT.
 - The job waits for the Rust release workflow to finish, downloads its artefacts, and republishes them under a unified `v<version>` release in `lcod-release`.
+- A JSON manifest (`release-manifest.json`) is generated and uploaded alongside the aggregated release; it currently lists the Rust kernel assets and will be extended as other runtimes ship official releases.
 - Extend this workflow later to pull in additional artefacts (JS/Java/CLI) once their release pipelines are established.
 
 ## Cascade CI
