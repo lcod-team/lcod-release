@@ -70,32 +70,59 @@ jobs:
         with:
           token: ${{ secrets.LCOD_RELEASE_TOKEN }}
 
-      - name: Wait for lcod-run release artefacts
+      - name: Wait for repository releases
         env:
           VERSION: ${{ inputs.version }}
           GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
         run: |
-          tag="lcod-run-v${VERSION}"
-          attempts=0
-          until gh release view "${tag}" --repo lcod-team/lcod-kernel-rs >/dev/null 2>&1; do
-            attempts=$((attempts + 1))
-            if [ "${attempts}" -ge 20 ]; then
-              echo "Timed out waiting for release ${tag} in lcod-kernel-rs" >&2
-              exit 1
-            fi
-            echo "Waiting for ${tag} artefacts..."
-            sleep 30
+          repos=(
+            "lcod-team/lcod-kernel-rs"
+            "lcod-team/lcod-kernel-js"
+            "lcod-team/lcod-kernel-java"
+            "lcod-team/lcod-cli"
+          )
+          tags=(
+            "lcod-run-v${VERSION}"
+            "v${VERSION}"
+            "v${VERSION}"
+            "v${VERSION}"
+          )
+          for i in "${!repos[@]}"; do
+            repo="${repos[$i]}"
+            tag="${tags[$i]}"
+            attempts=0
+            until gh release view "${tag}" --repo "${repo}" >/dev/null 2>&1; do
+              attempts=$((attempts + 1))
+              if [ "${attempts}" -ge 40 ]; then
+                echo "Timed out waiting for release ${tag} in ${repo}" >&2
+                exit 1
+              fi
+              echo "Waiting for ${tag} in ${repo}..."
+              sleep 30
+            done
           done
 
-      - name: Download lcod-run artefacts
+      - name: Download release artefacts
         env:
           VERSION: ${{ inputs.version }}
           GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
         run: |
-          mkdir -p dist/rs
+          mkdir -p dist/rs dist/js dist/java dist/cli
           gh release download "lcod-run-v${VERSION}" \
             --repo lcod-team/lcod-kernel-rs \
             --dir dist/rs \
+            --clobber
+          gh release download "v${VERSION}" \
+            --repo lcod-team/lcod-kernel-js \
+            --dir dist/js \
+            --clobber
+          gh release download "v${VERSION}" \
+            --repo lcod-team/lcod-kernel-java \
+            --dir dist/java \
+            --clobber
+          gh release download "v${VERSION}" \
+            --repo lcod-team/lcod-cli \
+            --dir dist/cli \
             --clobber
 
       - name: Generate manifest
@@ -104,28 +131,44 @@ jobs:
           GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
         run: |
           mkdir -p dist
-          tag="lcod-run-v${VERSION}"
-          release_json="$(gh api repos/lcod-team/lcod-kernel-rs/releases/tags/${tag})"
-          manifest="$(jq --arg version "${VERSION}" '
+          python <<'PY'
+import json
+import os
+import subprocess
+
+version = os.environ["VERSION"]
+
+def release_info(repo: str, tag: str):
+    data = json.loads(subprocess.check_output(["gh", "api", f"repos/{repo}/releases/tags/{tag}"]))
+    return {
+        "repo": repo,
+        "tag": tag,
+        "url": data.get("html_url"),
+        "assets": [
             {
-              version: $version,
-              kernels: {
-                rs: {
-                  repo: "lcod-team/lcod-kernel-rs",
-                  tag: ("lcod-run-v" + $version),
-                  assets: [
-                    .assets[]
-                    | {
-                        name,
-                        size,
-                        download_url: .browser_download_url,
-                        content_type
-                      }
-                  ]
-                }
-              }
-            }' <<<"${release_json}")"
-          printf '%s\n' "${manifest}" > dist/release-manifest.json
+                "name": asset["name"],
+                "size": asset["size"],
+                "download_url": asset["browser_download_url"],
+                "content_type": asset.get("content_type"),
+            }
+            for asset in data.get("assets", [])
+        ],
+    }
+
+manifest = {
+    "version": version,
+    "kernels": {
+        "rs": release_info("lcod-team/lcod-kernel-rs", f"lcod-run-v{version}"),
+        "js": release_info("lcod-team/lcod-kernel-js", f"v{version}"),
+        "java": release_info("lcod-team/lcod-kernel-java", f"v{version}"),
+    },
+    "cli": release_info("lcod-team/lcod-cli", f"v{version}"),
+}
+
+with open("dist/release-manifest.json", "w", encoding="utf-8") as fh:
+    json.dump(manifest, fh, indent=2)
+    fh.write("\n")
+PY
 
       - name: Create aggregated release
         env:
