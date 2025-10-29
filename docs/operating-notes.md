@@ -51,6 +51,6 @@ This document captures the initial ideas for the LCOD release orchestrator. It w
 1. Set the desired version in `VERSION` (e.g. `echo "0.1.15" > VERSION`).
 2. Run `./scripts/sync-version.sh …` on every repository that ships artefacts, then commit & push the bumps (reference `lcod-release` issue for traceability).
 3. Launch `trigger-cascade.sh` to run the latest CI pipelines on the new version (`REPO_LIST` helps if only a subset needs verification).
-4. Tag the kernel releases (`git tag lcod-run-v0.1.15 && git push origin lcod-run-v0.1.15`) and monitor the GitHub Actions release workflow until all artefacts (Linux, macOS arm64/x64, Windows) publish successfully.
+4. Tag the kernel releases (`git tag lcod-run-v0.1.15 && git push origin lcod-run-v0.1.15`) et surveiller les workflows GitHub Actions. Le kernel Rust publie toujours les binaires Linux/macOS/Windows ; Node génère le runtime bundle, Java publie désormais un unique `lcod-run-<version>.jar` (plus l’archive embedding) et le CLI produit les installeurs.
 5. Update the CLI README/examples if the one-liner mentions a specific version, and regenerate any installer bundles.
 6. Kick off the benchmark project and attach the resulting report to the release entry.
