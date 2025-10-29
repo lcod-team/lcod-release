@@ -167,46 +167,46 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
           GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
-        run: |
+        run: |2
           mkdir -p dist
-          cat <<'PY' | python -
-import json
-import os
-import subprocess
+          python <<'PY'
+  import json
+  import os
+  import subprocess
 
-version = os.environ["VERSION"]
-
-def release_info(repo: str, tag: str):
+  def release_info(repo: str, tag: str):
     data = json.loads(subprocess.check_output(["gh", "api", f"repos/{repo}/releases/tags/{tag}"]))
     return {
-        "repo": repo,
-        "tag": tag,
-        "url": data.get("html_url"),
-        "assets": [
-            {
-                "name": asset["name"],
-                "size": asset["size"],
-                "download_url": asset["browser_download_url"],
-                "content_type": asset.get("content_type"),
-            }
-            for asset in data.get("assets", [])
-        ],
+      "repo": repo,
+      "tag": tag,
+      "url": data.get("html_url"),
+      "assets": [
+        {
+          "name": asset["name"],
+          "size": asset["size"],
+          "download_url": asset["browser_download_url"],
+          "content_type": asset.get("content_type"),
+        }
+        for asset in data.get("assets", [])
+      ],
     }
 
-manifest = {
+  version = os.environ["VERSION"]
+  manifest = {
     "version": version,
     "kernels": {
-        "rs": release_info("lcod-team/lcod-kernel-rs", f"lcod-run-v{version}"),
-        "js": release_info("lcod-team/lcod-kernel-js", f"v{version}"),
-        "java": release_info("lcod-team/lcod-kernel-java", f"v{version}"),
+      "rs": release_info("lcod-team/lcod-kernel-rs", f"lcod-run-v{version}"),
+      "js": release_info("lcod-team/lcod-kernel-js", f"v{version}"),
+      "java": release_info("lcod-team/lcod-kernel-java", f"v{version}"),
     },
     "cli": release_info("lcod-team/lcod-cli", f"v{version}"),
-}
+  }
 
-with open("dist/release-manifest.json", "w", encoding="utf-8") as fh:
+  with open("dist/release-manifest.json", "w", encoding="utf-8") as fh:
     json.dump(manifest, fh, indent=2)
     fh.write("\n")
 PY
+
 
       - name: Create aggregated release
         env:
