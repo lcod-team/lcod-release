@@ -53,7 +53,7 @@ jobs:
           git checkout -b "$branch"
           git add VERSION
           git commit -m "chore(release): set version to ${VERSION}"
-          git push origin "$branch"
+          git push "https://nicolas-albert:${GH_TOKEN}@github.com/${{ github.repository }}.git" "$branch:$branch"
           echo "branch=${branch}" >> "$GITHUB_OUTPUT"
 
       - name: Open pull request
@@ -145,7 +145,7 @@ jobs:
             git checkout -b "${branch}"
             git add -A
             git commit -m "chore(release): bump version to ${VERSION}"
-            git push origin "${branch}" --force-with-lease
+            git push "https://nicolas-albert:${GH_TOKEN}@github.com/${{ matrix.repo }}.git" "${branch}:${branch}" --force
 
             existing="$(gh pr list --head "${branch}" --json number --jq '.[0].htmlUrl' || true)"
             if [[ -z "${existing}" ]]; then
