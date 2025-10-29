@@ -20,6 +20,11 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.LCOD_RELEASE_TOKEN }}
 
+      - name: Setup git credentials
+        run: gh auth setup-git
+        env:
+          GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
+
       - name: Configure git author
         run: |
           git config user.name "lcod-release-bot"
@@ -85,6 +90,11 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.LCOD_RELEASE_TOKEN }}
 
+      - name: Setup git credentials
+        run: gh auth setup-git
+        env:
+          GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
+
       - name: Checkout ${{ matrix.repo }}
         uses: actions/checkout@v4
         with:
@@ -92,6 +102,12 @@ jobs:
           path: target
           fetch-depth: 0
           token: ${{ secrets.LCOD_RELEASE_TOKEN }}
+
+      - name: Setup git credentials (target repo)
+        working-directory: target
+        run: gh auth setup-git
+        env:
+          GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
 
       - name: Configure git author
         working-directory: target
