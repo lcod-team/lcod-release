@@ -1,0 +1,129 @@
+name: Finalize Release Cascade
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Target semantic version (ex: 0.1.16)"
+        required: true
+
+jobs:
+  tag-repositories:
+    name: Tag repositories
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: lcod-kernel-rs
+            repo: lcod-team/lcod-kernel-rs
+            tag_prefix: lcod-run-v
+            message_prefix: "lcod-run "
+          - name: lcod-kernel-js
+            repo: lcod-team/lcod-kernel-js
+            tag_prefix: v
+            message_prefix: "lcod-kernel-js "
+          - name: lcod-kernel-java
+            repo: lcod-team/lcod-kernel-java
+            tag_prefix: v
+            message_prefix: "lcod-kernel-java "
+          - name: lcod-cli
+            repo: lcod-team/lcod-cli
+            tag_prefix: v
+            message_prefix: "lcod-cli "
+    steps:
+      - name: Checkout ${{ matrix.repo }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          token: ${{ secrets.LCOD_RELEASE_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure author
+        run: |
+          git config user.name "lcod-release-bot"
+          git config user.email "releases@lcod.team"
+
+      - name: Create and push tag
+        env:
+          VERSION: ${{ inputs.version }}
+          TAG_PREFIX: ${{ matrix.tag_prefix }}
+          MESSAGE_PREFIX: ${{ matrix.message_prefix }}
+        run: |
+          tag="${TAG_PREFIX}${VERSION}"
+          if git rev-parse "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "- ${{ matrix.repo }}: tag ${tag} already exists" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          git tag -a "${tag}" -m "${MESSAGE_PREFIX}${VERSION}"
+          git push origin "${tag}"
+          echo "- ${{ matrix.repo }}: created ${tag}" >> "$GITHUB_STEP_SUMMARY"
+
+  aggregate-release:
+    name: Aggregate release assets
+    runs-on: ubuntu-latest
+    needs: tag-repositories
+    steps:
+      - name: Checkout lcod-release
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.LCOD_RELEASE_TOKEN }}
+
+      - name: Wait for lcod-run release artefacts
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
+        run: |
+          tag="lcod-run-v${VERSION}"
+          attempts=0
+          until gh release view "${tag}" --repo lcod-team/lcod-kernel-rs >/dev/null 2>&1; do
+            attempts=$((attempts + 1))
+            if [ "${attempts}" -ge 20 ]; then
+              echo "Timed out waiting for release ${tag} in lcod-kernel-rs" >&2
+              exit 1
+            fi
+            echo "Waiting for ${tag} artefacts..."
+            sleep 30
+          done
+
+      - name: Download lcod-run artefacts
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
+        run: |
+          mkdir -p dist/rs
+          gh release download "lcod-run-v${VERSION}" \
+            --repo lcod-team/lcod-kernel-rs \
+            --dir dist/rs \
+            --clobber
+
+      - name: Create aggregated release
+        env:
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
+        run: |
+          mapfile -t FILES < <(find dist -type f -print)
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            echo "No artefacts downloaded; aborting."
+            exit 1
+          fi
+
+          notes="Aggregated release ${VERSION}
+
+Included artefacts:
+- lcod-kernel-rs (lcod-run-v${VERSION})
+"
+
+          if gh release view "v${VERSION}" >/dev/null 2>&1; then
+            gh release upload "v${VERSION}" "${FILES[@]}" --clobber
+            gh release edit "v${VERSION}" --notes "${notes}"
+          else
+            gh release create "v${VERSION}" "${FILES[@]}" --title "LCOD ${VERSION}" --notes "${notes}"
+          fi
+
+      - name: Summarise aggregated release
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          echo "- lcod-release: published aggregated release v${VERSION}" >> "$GITHUB_STEP_SUMMARY"

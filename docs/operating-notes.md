@@ -26,6 +26,12 @@ This document captures the initial ideas for the LCOD release orchestrator. It w
 - The job publishes a summary with either the PR URL or a note that no changes were needed.
 - After the workflow finishes, review/merge the PRs, then proceed with tagging and asset publication.
 
+### GitHub workflow `Finalize Release Cascade`
+
+- Manual trigger with the same `version` input tags every downstream repository (`lcod-run-v<version>` for the Rust kernel, `v<version>` elsewhere) using the release PAT.
+- The job waits for the Rust release workflow to finish, downloads its artefacts, and republishes them under a unified `v<version>` release in `lcod-release`.
+- Extend this workflow later to pull in additional artefacts (JS/Java/CLI) once their release pipelines are established.
+
 ## Cascade CI
 
 - Spec and resolver changes should trigger kernels to run their full test suites before merging.
