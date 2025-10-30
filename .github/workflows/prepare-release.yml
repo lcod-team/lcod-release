@@ -57,6 +57,7 @@ jobs:
           echo "branch=${branch}" >> "$GITHUB_OUTPUT"
 
       - name: Open pull request
+        id: open_pr
         if: steps.meta.outputs.branch != ''
         env:
           GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
@@ -83,6 +84,15 @@ jobs:
             "${label_args[@]}")"
 
           echo "- lcod-release: ${pr_url}" >> "$GITHUB_STEP_SUMMARY"
+          echo "pr_url=${pr_url}" >> "$GITHUB_OUTPUT"
+
+      - name: Enable auto-merge (lcod-release)
+        if: steps.open_pr.outputs.pr_url != ''
+        env:
+          GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
+          PR_URL: ${{ steps.open_pr.outputs.pr_url }}
+        run: |
+          gh pr merge "${PR_URL}" --auto --merge
 
   propagate-version:
     name: Prepare bumps in downstream repositories
@@ -139,6 +149,7 @@ jobs:
           ./scripts/sync-version.sh target
 
       - name: Commit and open pull request
+        id: downstream_pr
         env:
           VERSION: ${{ inputs.version }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -170,6 +181,16 @@ jobs:
             fi
 
             echo "- ${{ matrix.repo }}: ${pr_url}" >> "$GITHUB_STEP_SUMMARY"
+            echo "pr_url=${pr_url}" >> "$GITHUB_OUTPUT"
           else
             echo "- ${{ matrix.repo }}: aucune modification nécessaire" >> "$GITHUB_STEP_SUMMARY"
+            echo "pr_url=" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Enable auto-merge (target repo)
+        if: steps.downstream_pr.outputs.pr_url != ''
+        env:
+          GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
+          PR_URL: ${{ steps.downstream_pr.outputs.pr_url }}
+        run: |
+          gh pr merge "${PR_URL}" --auto --merge
