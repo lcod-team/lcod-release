@@ -87,7 +87,7 @@ jobs:
           echo "pr_url=${pr_url}" >> "$GITHUB_OUTPUT"
 
     - name: Enable auto-merge (lcod-release)
-      if: false
+      if: ${{ false }}
       env:
         GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
         PR_URL: ${{ steps.open_pr.outputs.pr_url }}
@@ -202,7 +202,7 @@ jobs:
           fi
 
     - name: Enable auto-merge (target repo)
-      if: false
+      if: ${{ false }}
       env:
         GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
         PR_URL: ${{ steps.downstream_pr.outputs.pr_url }}
