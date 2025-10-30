@@ -86,13 +86,14 @@ jobs:
           echo "- lcod-release: ${pr_url}" >> "$GITHUB_STEP_SUMMARY"
           echo "pr_url=${pr_url}" >> "$GITHUB_OUTPUT"
 
-      - name: Enable auto-merge (lcod-release)
-        if: steps.open_pr.outputs.pr_url != ''
-        env:
-          GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
-          PR_URL: ${{ steps.open_pr.outputs.pr_url }}
-        run: |
-          gh pr merge "${PR_URL}" --auto --merge
+    - name: Enable auto-merge (lcod-release)
+      if: steps.open_pr.outputs.pr_url != ''
+      env:
+        GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
+        PR_URL: ${{ steps.open_pr.outputs.pr_url }}
+      continue-on-error: true
+      run: |
+        gh pr merge "${PR_URL}" --auto --merge
 
   propagate-version:
     name: Prepare bumps in downstream repositories
@@ -201,10 +202,11 @@ jobs:
             echo "pr_url=" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Enable auto-merge (target repo)
-        if: steps.downstream_pr.outputs.pr_url != ''
-        env:
-          GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
-          PR_URL: ${{ steps.downstream_pr.outputs.pr_url }}
-        run: |
-          gh pr merge "${PR_URL}" --auto --merge
+    - name: Enable auto-merge (target repo)
+      if: steps.downstream_pr.outputs.pr_url != ''
+      env:
+        GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
+        PR_URL: ${{ steps.downstream_pr.outputs.pr_url }}
+      continue-on-error: true
+      run: |
+        gh pr merge "${PR_URL}" --auto --merge
