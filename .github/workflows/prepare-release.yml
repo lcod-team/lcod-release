@@ -163,7 +163,7 @@ jobs:
             git commit -m "chore(release): bump version to ${VERSION}"
             git push "https://nicolas-albert:${GH_TOKEN}@github.com/${{ matrix.repo }}.git" "${branch}:${branch}" --force
 
-            existing="$(gh pr list --head "${branch}" --json number --jq '.[0].htmlUrl' || true)"
+            existing="$(gh pr list --head "${branch}" --state all --json number --jq '.[0].htmlUrl' || true)"
             if [[ -z "${existing}" ]]; then
               label_args=()
               if gh label view release >/dev/null 2>&1; then
