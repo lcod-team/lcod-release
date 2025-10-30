@@ -164,6 +164,7 @@ jobs:
             git push "https://nicolas-albert:${GH_TOKEN}@github.com/${{ matrix.repo }}.git" "${branch}:${branch}" --force
 
             existing="$(gh pr list --head "${branch}" --state all --json number,url --jq '.[0].url' || true)"
+            echo "existing-pr=${existing}" >> "$GITHUB_STEP_SUMMARY"
             if [[ -z "${existing}" ]]; then
               label_args=()
               if gh label view release >/dev/null 2>&1; then
