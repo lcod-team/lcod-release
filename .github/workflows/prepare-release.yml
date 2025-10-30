@@ -46,7 +46,7 @@ jobs:
           branch="release/v${VERSION}"
           if git diff --quiet --exit-code; then
             echo "VERSION file already set to ${VERSION}, skipping commit."
-            echo "branch=${branch}" >> "$GITHUB_OUTPUT"
+            echo "branch=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
