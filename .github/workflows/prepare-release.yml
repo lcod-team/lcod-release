@@ -171,12 +171,25 @@ jobs:
                 label_args+=(--label release)
               fi
 
-              pr_url="$(gh pr create \
+              set +e
+              create_output="$(gh pr create \
                 --base main \
                 --head "${branch}" \
                 --title "chore(release): bump version to ${VERSION}" \
                 --body "Automated bump to ${VERSION} triggered from ${RUN_URL} via lcod-release." \
-                "${label_args[@]}")"
+                "${label_args[@]}" 2>&1)"
+              status=$?
+              set -e
+              if [[ ${status} -ne 0 ]]; then
+                if grep -qi "already exists" <<<"${create_output}"; then
+                  pr_url="$(gh pr list --head "${branch}" --state all --json number,url --jq '.[0].url' || true)"
+                else
+                  echo "${create_output}" >&2
+                  exit ${status}
+                fi
+              else
+                pr_url="${create_output}"
+              fi
             else
               pr_url="${existing}"
             fi
