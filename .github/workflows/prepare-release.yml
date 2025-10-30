@@ -91,9 +91,8 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
         PR_URL: ${{ steps.open_pr.outputs.pr_url }}
-      continue-on-error: true
       run: |
-        gh pr merge "${PR_URL}" --auto --merge
+        gh pr merge "${PR_URL}" --auto --merge || echo "auto-merge skipped"
 
   propagate-version:
     name: Prepare bumps in downstream repositories
@@ -207,6 +206,5 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
         PR_URL: ${{ steps.downstream_pr.outputs.pr_url }}
-      continue-on-error: true
       run: |
-        gh pr merge "${PR_URL}" --auto --merge
+        gh pr merge "${PR_URL}" --auto --merge || echo "auto-merge skipped"
