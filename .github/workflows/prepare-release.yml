@@ -87,12 +87,12 @@ jobs:
           echo "pr_url=${pr_url}" >> "$GITHUB_OUTPUT"
 
     - name: Enable auto-merge (lcod-release)
-      if: steps.open_pr.outputs.pr_url != ''
+      if: false
       env:
         GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
         PR_URL: ${{ steps.open_pr.outputs.pr_url }}
       run: |
-        gh pr merge "${PR_URL}" --auto --merge || echo "auto-merge skipped"
+        echo "auto-merge disabled"
 
   propagate-version:
     name: Prepare bumps in downstream repositories
@@ -202,9 +202,9 @@ jobs:
           fi
 
     - name: Enable auto-merge (target repo)
-      if: steps.downstream_pr.outputs.pr_url != ''
+      if: false
       env:
         GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
         PR_URL: ${{ steps.downstream_pr.outputs.pr_url }}
       run: |
-        gh pr merge "${PR_URL}" --auto --merge || echo "auto-merge skipped"
+        echo "auto-merge disabled"
