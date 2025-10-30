@@ -87,12 +87,25 @@ jobs:
           echo "pr_url=${pr_url}" >> "$GITHUB_OUTPUT"
 
       - name: Enable auto-merge (lcod-release)
-        if: ${{ false }}
+        if: ${{ steps.open_pr.outputs.pr_url != '' }}
         env:
           GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
           PR_URL: ${{ steps.open_pr.outputs.pr_url }}
         run: |
-          echo "auto-merge disabled"
+          read -r pr_id state < <(gh pr view "${PR_URL}" --json id,state --jq '"\(.id) \(.state)"')
+          if [[ "${state}" == "MERGED" ]]; then
+            echo "PR already merged"
+            exit 0
+          fi
+          if [[ "${state}" == "CLOSED" ]]; then
+            echo "::error::PR ${PR_URL} is closed; cannot enable auto-merge." >&2
+            exit 1
+          fi
+          gh api graphql \
+            -f query='mutation($pr:ID!,$method:PullRequestMergeMethod!){enablePullRequestAutoMerge(input:{pullRequestId:$pr,mergeMethod:$method}){pullRequest{number}}}' \
+            -f pr="${pr_id}" \
+            -F method=MERGE >/dev/null
+          echo "- lcod-release: auto-merge enabled" >> "$GITHUB_STEP_SUMMARY"
 
   propagate-version:
     name: Prepare bumps in downstream repositories
@@ -202,9 +215,22 @@ jobs:
           fi
 
       - name: Enable auto-merge (target repo)
-        if: ${{ false }}
+        if: ${{ steps.downstream_pr.outputs.pr_url != '' }}
         env:
           GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
           PR_URL: ${{ steps.downstream_pr.outputs.pr_url }}
         run: |
-          echo "auto-merge disabled"
+          read -r pr_id state < <(gh pr view "${PR_URL}" --json id,state --jq '"\(.id) \(.state)"')
+          if [[ "${state}" == "MERGED" ]]; then
+            echo "PR already merged"
+            exit 0
+          fi
+          if [[ "${state}" == "CLOSED" ]]; then
+            echo "::error::PR ${PR_URL} is closed; cannot enable auto-merge." >&2
+            exit 1
+          fi
+          gh api graphql \
+            -f query='mutation($pr:ID!,$method:PullRequestMergeMethod!){enablePullRequestAutoMerge(input:{pullRequestId:$pr,mergeMethod:$method}){pullRequest{number}}}' \
+            -f pr="${pr_id}" \
+            -F method=MERGE >/dev/null
+          echo "- ${PR_URL}: auto-merge enabled" >> "$GITHUB_STEP_SUMMARY"
