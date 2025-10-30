@@ -217,6 +217,11 @@ jobs:
               fh.write("\n")
           PY
 
+      - name: Prepare installer scripts
+        run: |
+          cp scripts/install-cli.sh dist/install.sh
+          cp scripts/install-cli.ps1 dist/install.ps1
+          chmod +x dist/install.sh
 
       - name: Create aggregated release
         env:

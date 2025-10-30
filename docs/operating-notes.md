@@ -33,10 +33,10 @@ This document captures the initial ideas for the LCOD release orchestrator. It w
 - It waits for the Rust/Node/Java/CLI release workflows to finish, downloads their artefacts, and republishes them inside the aggregated `v<version>` release in `lcod-release`.
 - A JSON manifest (`release-manifest.json`) is generated and uploaded alongside the aggregated release; it lists every runtime/CLI asset with size/content-type metadata for consumers.
 - Individual repositories publish their own releases on tag push:
-  - `lcod-kernel-rs`: `lcod-run-v<version>` (existing pipeline).
-  - `lcod-kernel-js`: runtime bundle `dist/lcod-kernel-js-runtime-<version>.tar.gz`.
-  - `lcod-kernel-java`: fat JAR + embedding libraries via Gradle pipeline.
-  - `lcod-cli`: Bash bundle + installers (`lcod-cli-<version>.tar.gz` / `.zip`).
+- `lcod-kernel-rs`: `lcod-run-v<version>` (existing pipeline).
+- `lcod-kernel-js`: runtime bundle `dist/lcod-kernel-js-runtime-<version>.tar.gz`.
+- `lcod-kernel-java`: fat JAR + embedding libraries via Gradle pipeline.
+- `lcod-cli`: Bash bundle + installers (`lcod-cli-<version>.tar.gz` / `.zip`) as well as the top-level scripts `install.sh` / `install.ps1` copied into the aggregated release.
 - Extend this workflow later with benchmarking results and additional artefacts (e.g. tooling bundles).
 
 ## Cascade CI
@@ -52,5 +52,5 @@ This document captures the initial ideas for the LCOD release orchestrator. It w
 2. Run `./scripts/sync-version.sh …` on every repository that ships artefacts, then commit & push the bumps (reference `lcod-release` issue for traceability).
 3. Launch `trigger-cascade.sh` to run the latest CI pipelines on the new version (`REPO_LIST` helps if only a subset needs verification).
 4. Tag the kernel releases (`git tag lcod-run-v0.1.15 && git push origin lcod-run-v0.1.15`) et surveiller les workflows GitHub Actions. Le kernel Rust publie toujours les binaires Linux/macOS/Windows ; Node génère le runtime bundle, Java publie désormais un unique `lcod-run-<version>.jar` (plus l’archive embedding) et le CLI produit les installeurs.
-5. Update the CLI README/examples if the one-liner mentions a specific version, and regenerate any installer bundles.
+5. Update the CLI README/examples si la one-liner mentionne une version précise. Les scripts `install.sh` / `install.ps1` sont ajoutés automatiquement à la release agrégée ; il suffit donc de vérifier que `curl -fsSL https://github.com/lcod-team/lcod-release/releases/latest/download/install.sh | bash` est bien documenté côté produit.
 6. Kick off the benchmark project and attach the resulting report to the release entry.

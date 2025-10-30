@@ -40,6 +40,22 @@ cd lcod-release
 
 The scripts require Bash ≥ 4, `curl`, `jq`, and the GitHub CLI (`gh`). Use `./scripts/bootstrap.sh` to check prerequisites once it lands.
 
+## Install the LCOD CLI in one command
+
+The aggregated releases published from this repository expose a turn-key installer. To install the latest tagged CLI binary:
+
+```bash
+curl -fsSL https://github.com/lcod-team/lcod-release/releases/latest/download/install.sh | bash
+```
+
+The script downloads the CLI bundle from the release manifest, reuses the official installer from `lcod-cli`, and places the `lcod` executable into a writable directory (`~/.lcod/bin`, `~/.local/bin`, …). On Windows/PowerShell, the equivalent command is:
+
+```powershell
+irm https://github.com/lcod-team/lcod-release/releases/latest/download/install.ps1 | iex
+```
+
+Both scripts accept the same options as the original installer (`LCOD_INSTALL_DIR`, `LCOD_INSTALL_NAME`, …). They also work offline when `LCOD_CLI_ARCHIVE_URL` is set to a locally cached tarball (for Bash) or zip (for PowerShell).
+
 ## Next steps
 
 - Finalise the version propagation script so kernels and resolver stay aligned.
