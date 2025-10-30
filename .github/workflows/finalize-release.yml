@@ -257,3 +257,34 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: |
           echo "- lcod-release: published aggregated release v${VERSION}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Cleanup working directory
+        run: rm -rf dist
+
+  cleanup-branches:
+    name: Delete release branches
+    runs-on: ubuntu-latest
+    needs: aggregate-release
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ secrets.LCOD_RELEASE_TOKEN }}
+    steps:
+      - name: Drop release branches in repositories
+        run: |
+          repos=(
+            "lcod-team/lcod-release"
+            "lcod-team/lcod-kernel-rs"
+            "lcod-team/lcod-kernel-js"
+            "lcod-team/lcod-kernel-java"
+            "lcod-team/lcod-cli"
+          )
+          branch="release/v${VERSION}"
+          for repo in "${repos[@]}"; do
+            ref="repos/${repo}/git/refs/heads/${branch}"
+            if gh api "${ref}" >/dev/null 2>&1; then
+              gh api -X DELETE "${ref}"
+              echo "- ${repo}: deleted ${branch}" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "- ${repo}: ${branch} already absent" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
