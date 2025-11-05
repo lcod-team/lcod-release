@@ -64,7 +64,9 @@ cat > "${NODE_WRAPPER}" <<EOF_WRAPPER
 #!/usr/bin/env bash
 set -euo pipefail
 export LCOD_HOME="${NODE_RUNTIME_ROOT}"
-exec node "${KERNEL_JS_DIR}/bin/run-compose.mjs" "\$@"
+export SPEC_REPO_PATH="${NODE_RUNTIME_ROOT}"
+export LCOD_RESOLVER_PATH="${NODE_RUNTIME_ROOT}/resolver"
+exec node "${KERNEL_JS_DIR}/bin/run-compose.mjs" --core --resolver "\$@"
 EOF_WRAPPER
 chmod +x "${NODE_WRAPPER}"
 install_with_cli node --path "${NODE_WRAPPER}" --version "${LABEL}" --force
@@ -76,7 +78,14 @@ log "Building Java kernel (lcod-kernel-java)"
 )
 JAVA_JAR="$(ls -1 "${KERNEL_JAVA_DIR}"/build/libs/lcod-run-*.jar 2>/dev/null | head -n1 || true)"
 [[ -n "${JAVA_JAR}" ]] || fail "Java kernel jar not found in build/libs"
-install_with_cli java --path "${JAVA_JAR}" --version "${LABEL}" --force
+JAVA_WRAPPER="${KERNEL_JAVA_DIR}/build/local-${LABEL}-run"
+cat > "${JAVA_WRAPPER}" <<EOF_JAVA
+#!/usr/bin/env bash
+set -euo pipefail
+exec java -jar "${JAVA_JAR}" "\$@"
+EOF_JAVA
+chmod +x "${JAVA_WRAPPER}"
+install_with_cli java --path "${JAVA_WRAPPER}" --version "${LABEL}" --force
 
 log "Rebuilding CLI bundle"
 (
@@ -106,4 +115,4 @@ log "CLI bundle copied to ${CLI_DEST}"
 log "Local environment refreshed with label '${LABEL}'."
 log "Rust kernel: ${RUST_BIN}"
 log "Node kernel wrapper: ${NODE_WRAPPER}"
-log "Java kernel: ${JAVA_JAR}"
+log "Java kernel wrapper: ${JAVA_WRAPPER}"
