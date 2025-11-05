@@ -56,6 +56,29 @@ irm https://github.com/lcod-team/lcod-release/releases/latest/download/install.p
 
 Both scripts accept the same options as the original installer (`LCOD_INSTALL_DIR`, `LCOD_INSTALL_NAME`, …). They also work offline when `LCOD_CLI_ARCHIVE_URL` is set to a locally cached tarball (for Bash) or zip (for PowerShell).
 
+## Refresh a local pre-release workspace
+
+When you need to smoke-test a build across every kernel before tagging, run the helper from the release repo:
+
+```bash
+./scripts/update-local.sh
+```
+
+It performs the following steps:
+
+1. Builds `lcod-kernel-rs` in release mode and installs it into the CLI manifest as `rs@dev-local`.
+2. Bundles `lcod-kernel-js`, extracts the runtime, and installs a wrapper pointing to the freshly built compose runner.
+3. Rebuilds the Java kernel and installs the jar into the manifest.
+4. Regenerates the CLI bundle and copies it to your `lcod` executable (defaults to `~/.local/bin/lcod` if the existing binary is not writable).
+
+Override repository locations or labels via environment variables:
+
+```bash
+WORKSPACE_ROOT=~/git LABEL=dev-$(date +%Y%m%d%H%M) ./scripts/update-local.sh
+```
+
+You can also override specific paths with `KERNEL_RS_DIR`, `KERNEL_JS_DIR`, `KERNEL_JAVA_DIR`, `CLI_DIR`, or force the CLI install destination via `LCOD_CLI_DEST`.
+
 ## Next steps
 
 - Finalise the version propagation script so kernels and resolver stay aligned.
