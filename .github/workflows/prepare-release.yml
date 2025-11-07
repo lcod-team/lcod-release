@@ -101,11 +101,23 @@ jobs:
             echo "::error::PR ${PR_URL} is closed; cannot enable auto-merge." >&2
             exit 1
           fi
-          gh api graphql \
+          set +e
+          output=$(gh api graphql \
             -f query='mutation($pr:ID!,$method:PullRequestMergeMethod!){enablePullRequestAutoMerge(input:{pullRequestId:$pr,mergeMethod:$method}){pullRequest{number}}}' \
             -f pr="${pr_id}" \
-            -F method=MERGE >/dev/null
-          echo "- lcod-release: auto-merge enabled" >> "$GITHUB_STEP_SUMMARY"
+            -F method=MERGE 2>&1)
+          status=$?
+          set -e
+          if [[ ${status} -ne 0 ]]; then
+            if grep -qi "Protected branch rules not configured" <<<"${output}"; then
+              echo "- lcod-release: auto-merge unavailable (branch not protected), continuing" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "${output}" >&2
+              exit ${status}
+            fi
+          else
+            echo "- lcod-release: auto-merge enabled" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   propagate-version:
     name: Prepare bumps in downstream repositories
@@ -229,8 +241,20 @@ jobs:
             echo "::error::PR ${PR_URL} is closed; cannot enable auto-merge." >&2
             exit 1
           fi
-          gh api graphql \
+          set +e
+          output=$(gh api graphql \
             -f query='mutation($pr:ID!,$method:PullRequestMergeMethod!){enablePullRequestAutoMerge(input:{pullRequestId:$pr,mergeMethod:$method}){pullRequest{number}}}' \
             -f pr="${pr_id}" \
-            -F method=MERGE >/dev/null
-          echo "- ${PR_URL}: auto-merge enabled" >> "$GITHUB_STEP_SUMMARY"
+            -F method=MERGE 2>&1)
+          status=$?
+          set -e
+          if [[ ${status} -ne 0 ]]; then
+            if grep -qi "Protected branch rules not configured" <<<"${output}"; then
+              echo "- ${PR_URL}: auto-merge unavailable (branch not protected), continuing" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "${output}" >&2
+              exit ${status}
+            fi
+          else
+            echo "- ${PR_URL}: auto-merge enabled" >> "$GITHUB_STEP_SUMMARY"
+          fi
