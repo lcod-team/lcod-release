@@ -54,7 +54,7 @@ NODE_ARCHIVE="${KERNEL_JS_DIR}/dist/runtime/lcod-runtime-${LABEL}.tar.gz"
 NODE_STAGE="${KERNEL_JS_DIR}/dist/local-${LABEL}"
 rm -rf "${NODE_STAGE}"
 mkdir -p "${NODE_STAGE}"
-tar -xzf "${NODE_ARCHIVE}" -C "${NODE_STAGE}"
+tar -xzf "${NODE_ARCHIVE}" -C "${NODE_STAGE}" 2> >(sed '/SCHILY\./d' >&2)
 NODE_RUNTIME_ROOT="$(find "${NODE_STAGE}" -maxdepth 2 -type f -name manifest.json -print -quit)"
 [[ -n "${NODE_RUNTIME_ROOT}" ]] || fail "Unable to locate manifest inside Node runtime archive"
 NODE_RUNTIME_ROOT="$(dirname "${NODE_RUNTIME_ROOT}")"
@@ -76,7 +76,7 @@ log "Building Java kernel (lcod-kernel-java)"
   cd "${KERNEL_JAVA_DIR}"
   ./gradlew --quiet build
 )
-JAVA_JAR="$(ls -1 "${KERNEL_JAVA_DIR}"/build/libs/lcod-run-*.jar 2>/dev/null | head -n1 || true)"
+JAVA_JAR="$(ls -1 "${KERNEL_JAVA_DIR}"/build/libs/lcod-run-*.jar 2>/dev/null | sort -V | tail -n1 || true)"
 [[ -n "${JAVA_JAR}" ]] || fail "Java kernel jar not found in build/libs"
 JAVA_WRAPPER="${KERNEL_JAVA_DIR}/build/local-${LABEL}-run"
 cat > "${JAVA_WRAPPER}" <<EOF_JAVA
@@ -111,6 +111,22 @@ fi
 cp "${CLI_BUNDLE}" "${CLI_DEST}"
 chmod +x "${CLI_DEST}"
 log "CLI bundle copied to ${CLI_DEST}"
+
+CLI_TEST_RUNNER="${CLI_DIR}/tests/run-all.sh"
+if [[ -x "${CLI_TEST_RUNNER}" ]]; then
+  DEFAULT_STATE_DIR="${LCOD_STATE_DIR:-${HOME}/.lcod}"
+  DEFAULT_BIN_DIR="${LCOD_BIN_DIR:-${DEFAULT_STATE_DIR}/bin}"
+  if [[ -x "${DEFAULT_BIN_DIR}/rs" ]]; then
+    log "Running CLI projection smoke tests"
+    LCOD_TEST_KERNEL_PATH="${DEFAULT_BIN_DIR}/rs" \
+    LCOD_TEST_SPEC_PATH="${WORKSPACE_ROOT}/lcod-spec" \
+      "${CLI_TEST_RUNNER}"
+  else
+    log "[skip] CLI projection tests (kernel binary missing at ${DEFAULT_BIN_DIR}/rs)."
+  fi
+else
+  log "[skip] CLI projection tests (runner not found)."
+fi
 
 log "Local environment refreshed with label '${LABEL}'."
 log "Rust kernel: ${RUST_BIN}"
