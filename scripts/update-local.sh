@@ -120,6 +120,7 @@ if [[ -x "${CLI_TEST_RUNNER}" ]]; then
     log "Running CLI projection smoke tests"
     LCOD_TEST_KERNEL_PATH="${DEFAULT_BIN_DIR}/rs" \
     LCOD_TEST_SPEC_PATH="${WORKSPACE_ROOT}/lcod-spec" \
+    LCOD_WORKSPACE_PATHS="${WORKSPACE_ROOT}/lcod-components:${WORKSPACE_ROOT}/lcod-spec:${NODE_RUNTIME_ROOT}" \
       "${CLI_TEST_RUNNER}"
   else
     log "[skip] CLI projection tests (kernel binary missing at ${DEFAULT_BIN_DIR}/rs)."
