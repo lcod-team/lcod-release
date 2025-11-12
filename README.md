@@ -79,6 +79,23 @@ WORKSPACE_ROOT=~/git LABEL=dev-$(date +%Y%m%d%H%M) ./scripts/update-local.sh
 
 You can also override specific paths with `KERNEL_RS_DIR`, `KERNEL_JS_DIR`, `KERNEL_JAVA_DIR`, `CLI_DIR`, or force the CLI install destination via `LCOD_CLI_DEST`.
 
+## Reproduce the kernel CI matrix locally
+
+Before opening a PR (or when triaging a CI failure) you can replay the exact test suites that run in GitHub Actions by calling:
+
+```bash
+./scripts/check-kernels.sh
+```
+
+The helper performs the following steps:
+
+1. Runs `scripts/update-local.sh` (skip by exporting `SKIP_UPDATE_LOCAL=1`).
+2. Executes `cargo test` plus `cargo run --bin test_specs` inside `lcod-kernel-rs`.
+3. Executes `npm test` plus `npm run test:spec` inside `lcod-kernel-js`, wiring `lcod-spec`, `lcod-resolver`, and `lcod-components` through the same env vars used in CI.
+4. Executes `./gradlew check lcodRunJar lcodRunnerLib` plus `./gradlew specTests` inside `lcod-kernel-java`.
+
+Repository locations default to sibling directories (`../lcod-spec`, `../lcod-resolver`, …); override them via `SPEC_REPO_PATH`, `LCOD_RESOLVER_PATH`, `LCOD_COMPONENTS_PATH`, `KERNEL_RS_DIR`, `KERNEL_JS_DIR`, or `KERNEL_JAVA_DIR`. The script also installs Node dependencies on demand whenever a `node_modules` directory is missing so fixture tests (those described under `lcod-spec/tests/spec`) have the required runtime assets.
+
 ## Next steps
 
 - Finalise the version propagation script so kernels and resolver stay aligned.
