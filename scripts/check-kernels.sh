@@ -54,6 +54,12 @@ KERNEL_RS_DIR="$(resolve_or_die KERNEL_RS_DIR "$KERNEL_RS_DIR")"
 KERNEL_JS_DIR="$(resolve_or_die KERNEL_JS_DIR "$KERNEL_JS_DIR")"
 KERNEL_JAVA_DIR="$(resolve_or_die KERNEL_JAVA_DIR "$KERNEL_JAVA_DIR")"
 
+# Export shared paths so every downstream compose sees consistent roots
+export SPEC_REPO_PATH="$SPEC_DIR"
+export LCOD_RESOLVER_PATH="$RESOLVER_DIR"
+export LCOD_COMPONENTS_PATH="$COMPONENTS_DIR"
+export LCOD_WORKSPACE_PATHS="$SPEC_DIR:$COMPONENTS_DIR:$RESOLVER_DIR"
+
 if [ "${SKIP_UPDATE_LOCAL:-0}" != "1" ]; then
   log "Running update-local to refresh kernels"
   "$ROOT_DIR/scripts/update-local.sh"
